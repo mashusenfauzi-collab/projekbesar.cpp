@@ -1,1 +1,95 @@
-https://github.com/mashusenfauzi-collab/-gemencurses.git
+#include <ncurses/curses.h>
+#include <vector>
+#include <fstream>
+#include <cstdlib>
+#include <algorithm>
+#include <cmath>
+using namespace std;
+
+// GLOBAL VARIABLE
+int maxX, maxY;
+int paddleX, paddleY, paddleWidth = 10;
+
+float ballX, ballY, velX = 1, velY = -1;
+
+struct Brick {
+    int x, y;
+    bool alive = true;
+};
+
+vector<Brick> bricks;
+int score = 0;
+
+// LOADING SCREEN
+void showLoadingScreen() {
+    start_color();
+    init_pair(2, COLOR_YELLOW, COLOR_BLACK);
+    init_pair(3, COLOR_GREEN, COLOR_BLACK);
+    init_pair(4, COLOR_WHITE, COLOR_BLACK);
+    init_pair(5, COLOR_CYAN, COLOR_BLACK);
+
+    int y = maxY / 2;
+    int x = maxX / 2 - 15;
+
+    for (int p = 0; p <= 100; p += 5) {
+        erase();
+
+        attron(COLOR_PAIR(2));
+        mvprintw(y - 2, x, "Loading Game...");
+        attroff(COLOR_PAIR(2));
+
+        attron(COLOR_PAIR(4));
+        mvprintw(y, x - 2, "[");
+        mvprintw(y, x + 22, "]");
+        attroff(COLOR_PAIR(4));
+
+        int filled = (p * 20) / 100;
+        attron(COLOR_PAIR(3));
+        for (int i = 0; i < filled; i++)
+            mvprintw(y, x + i, "=");
+        attroff(COLOR_PAIR(3));
+
+        attron(COLOR_PAIR(5));
+        mvprintw(y + 2, x + 5, "%d%%", p);
+        attroff(COLOR_PAIR(5));
+
+        refresh();
+        napms(120);
+    }
+
+    erase();
+    refresh();
+    napms(200);
+}
+
+
+// BRICK SETUP
+void initBricks() {
+    bricks.clear();
+
+    int cols = maxX / 7;
+    if (cols < 4) cols = 4;
+    int rows = 5;
+
+    for (int i = 0; i < rows; i++)
+        for (int j = 0; j < cols; j++)
+            bricks.push_back({ j * 7 + 3, i * 2 + 3, true });
+}
+
+// DRAW GAME
+void drawGame(int highScore) {
+    erase();
+
+    mvprintw(0, 2, "Score: %d  High Score: %d", score, highScore);
+
+    for (auto &b : bricks)
+        if (b.alive)
+            mvprintw(b.y, b.x, "[=#=] ");
+
+    int px = max(0, min(paddleX, maxX - paddleWidth));
+    for (int i = 0; i < paddleWidth; i++)
+        mvaddch(paddleY, px + i, '_');
+
+    mvaddch((int)ballY, (int)ballX, 'O');
+    refresh();
+}

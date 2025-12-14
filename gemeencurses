@@ -93,3 +93,175 @@ void drawGame(int highScore) {
     mvaddch((int)ballY, (int)ballX, 'O');
     refresh();
 }
+// UPDATE BALL (VERSI STABIL)  
+void updateBall() {
+    ballX += velX;
+    ballY += velY;
+    // Dinding kiri & kanan
+    if (ballX <= 0) {
+        ballX = 1;
+        velX *= -1;
+    }
+    else if (ballX >= maxX - 1) {
+        ballX = maxX - 2;
+        velX *= -1;
+    }
+    // Dinding atas
+    if (ballY <= 1) {
+        ballY = 2;
+        velY *= -1;
+    }
+    // PANTULAN PADDLE (FIX BUG)
+    if (velY > 0 &&                          
+        ballY >= paddleY - 1 &&
+        ballY <= paddleY &&
+        ballX >= paddleX &&
+        ballX <= paddleX + paddleWidth)
+    {
+        velY = -fabs(velY);                  
+        ballY = paddleY - 1;                
+
+        float center = paddleX + paddleWidth / 2.0f;
+        velX += (ballX - center) * 0.05f;
+
+        if (velX > 2.0f) velX = 2.0f;
+        if (velX < -2.0f) velX = -2.0f;
+    }
+
+    // TABRAKAN BRICK
+    for (auto &b : bricks) {
+        if (b.alive &&
+            (int)ballY == b.y &&
+            ballX >= b.x &&
+            ballX <= b.x + 4)
+        {
+            b.alive = false;
+            velY *= -1;
+            score += 10;
+            break;
+        }
+    }
+}
+
+// CEK STATUS GAME
+bool isWin() {
+    for (auto &b : bricks)
+        if (b.alive) return false;
+    return true;
+}
+
+bool isGameOver() {
+    return (int)ballY >= maxY - 1;
+}
+
+// HIGH SCORE
+int loadHighScore() {
+    int highScore = 0;
+    ifstream f("highscore.txt");
+    if (f.is_open()) {
+        f >> highScore;
+        f.close();
+    }
+    return highScore;
+}
+
+void saveHighScore(int highScore) {
+    ofstream f("highscore.txt");
+    f << highScore;
+    f.close();
+}
+// GAME LOOP 
+void gameLoop(int &highScore) {
+    timeout(30);
+
+    while (true) {
+        int ch = getch();
+        if (ch == KEY_LEFT && paddleX > 0)
+            paddleX -= 2;
+        else if (ch == KEY_RIGHT && paddleX + paddleWidth < maxX)
+            paddleX += 2;
+        else if (ch == 'q')
+            return;
+
+        updateBall();
+
+        if (isWin() || isGameOver()) {
+            if (score > highScore) {
+                highScore = score;
+                saveHighScore(highScore);
+            }
+
+            erase();
+            mvprintw(maxY / 2,
+                     maxX / 2 - 6,
+                     isWin() ? "YOU WIN!" : "GAME OVER!");
+            mvprintw(maxY / 2 + 1,
+                     maxX / 2 - 12,
+                     "(r) Restart   (q) Keluar");
+            refresh();
+
+            timeout(-1);
+            while (true) {
+                int c = getch();
+                if (c == 'r') return;
+                if (c == 'q') {
+                    endwin();
+                    exit(0);
+                }
+            }
+        }
+
+        drawGame(highScore);
+        napms(16);
+    }
+}
+
+// MENU UTAMA
+void showMenu(int &highScore) {
+    timeout(-1);
+
+    while (true) {
+        erase();
+        mvprintw(maxY / 2 - 2, maxX / 2 - 6, "BRICK GAME");
+        mvprintw(maxY / 2,     maxX / 2 - 7, "(1) Mulai Game");
+        mvprintw(maxY / 2 + 1, maxX / 2 - 7, "(2) Keluar");
+        mvprintw(maxY / 2 + 3, maxX / 2 - 7, "High Score: %d", highScore);
+        refresh();
+
+        int ch = getch();
+        if (ch == '1') {
+            score = 0;
+            paddleWidth = min(20, maxX / 6);
+            paddleX = maxX / 2 - paddleWidth / 2;
+            paddleY = maxY - 2;
+            ballX = maxX / 2;
+            ballY = maxY / 2;
+            velX = 1;
+            velY = -1;
+
+            initBricks();
+            gameLoop(highScore);
+        }
+        else if (ch == '2') {
+            endwin();
+            exit(0);
+        }
+    }
+}
+
+// FUNGSI MAIN
+int main() {
+    initscr();
+    noecho();
+    curs_set(0);
+    keypad(stdscr, TRUE);
+
+    getmaxyx(stdscr, maxY, maxX);
+    showLoadingScreen();
+
+    int highScore = loadHighScore();
+    showMenu(highScore);
+
+    endwin();
+    return 0;
+}

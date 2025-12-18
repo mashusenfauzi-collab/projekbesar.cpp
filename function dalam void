@@ -1,0 +1,14 @@
+#include <iostream>
+using namespace std;
+
+void perkenalkan(){
+     cout << " halo perkenalkan nama saya adalah ahmad husen fauzi dari  kelas A ilkomp 25" << endl;
+     cout << " sayaa suka ngoding " << endl;
+     cout << " sahabat sejati saya semua anak kls ilkomp 25" << endl
+}
+
+int main(){
+ perkenalkan();
+
+return 0;
+}

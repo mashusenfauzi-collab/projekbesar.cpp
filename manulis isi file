@@ -1,0 +1,18 @@
+int main() {
+
+    int choice;
+    cout << "1. Registration" << endl;
+    cout << "2. Login" << endl;
+    cout << "3. Input Your Choice : ";
+    cin >> choice;
+
+    switch (choice) {
+        case 1:
+            registration();
+            break;
+
+        case 2:
+            login();
+            break;
+    }
+}
